@@ -6,55 +6,61 @@ router.get('/', (req, res) => {
     Comment.findAll({
 
         attributes: ['id', 'comment_text', 'created_at', 'post_id'],
-        
-        
+
+
         include: [
-            
+
             {
-                
-                model: User, 
-                
-                atrributes: ['username'], 
-                
-                attributes: {exclude: ['password'] }
+
+                model: User,
+
+                atrributes: ['username'],
+
+                attributes: { exclude: ['password'] }
             }
         ]
-    })
-
-    .then(dbCommentData => res.json(dbCommentData))
-
-    .catch(err => {
-
-        cpnsole.log(err);
-
-        res.status(500).json(err);
-
-    });
-
-});
-
-router.post('/', (req, res) => {
-
-    Comment.create({
-
-        comment_text: req.body.comment_text,
-
-        user_id: req.body.user_id,
-
-        post_id: req.body.post_id
-
     })
 
         .then(dbCommentData => res.json(dbCommentData))
 
         .catch(err => {
 
-            console.log(err);
+            cpnsole.log(err);
 
-            res.status(400).json(err);
+            res.status(500).json(err);
 
         });
 
+});
+
+router.post('/', (req, res) => {
+
+    // check the session
+    if (req.session) {
+
+        Comment.create({
+
+            comment_text: req.body.comment_text,
+
+            post_id: req.body.post_id,
+
+            // use the id from the session
+            user_id: req.session.user_id
+
+        })
+
+            .then(dbCommentData => res.json(dbCommentData))
+
+            .catch(err => {
+
+                console.log(err);
+
+                res.status(400).json(err);
+
+            });
+
+    }
+    
 });
 
 router.delete('/:id', (req, res) => {
@@ -68,27 +74,27 @@ router.delete('/:id', (req, res) => {
         }
     })
 
-    .then(dbCommentData => {
+        .then(dbCommentData => {
 
-        if (!dbCommentData) {
+            if (!dbCommentData) {
 
-            res.status(404).json({ message: 'No comments found this id' });
+                res.status(404).json({ message: 'No comments found this id' });
 
-            return;
+                return;
 
-        }
+            }
 
-        res.json(dbCommentData);
+            res.json(dbCommentData);
 
-    })
+        })
 
-    .catch(err => {
+        .catch(err => {
 
-        console.log(err);
+            console.log(err);
 
-        res.status(500).json(err);
+            res.status(500).json(err);
 
-    });
+        });
 
 });
 
