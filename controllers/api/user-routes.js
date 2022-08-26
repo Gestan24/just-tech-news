@@ -1,5 +1,8 @@
 const router = require('express').Router();
+
 const { User, Comment, Post, Vote } = require('../../models');
+
+const sequelize = require('../../config/connection');
 
 // GET /api/users
 router.get('/', (req, res) => {
@@ -26,15 +29,21 @@ router.get('/', (req, res) => {
 
     })
 
-        .then(dbUserData => res.json(dbUserData))
+        .then(dbUserData => {
 
-        .catch(err => {
+            req.session.save(() => {
 
-            console.log(err);
+                req.session.user_id = dbUserData.id;
 
-            res.status(500).json(err);
+                req.session.username = dbUserData.username;
 
-        });
+                req.session.loggedIn = true;
+
+
+                res.json(dbUserData);
+
+            });
+        })
 
     //equivalent to SELECT * FROM users;
 
@@ -177,14 +186,44 @@ router.post('/login', (req, res) => {
 
         }
 
-        res.json({ user: dbUserData, message: 'You are now logged in!' });
+        req.session.save(() => {
 
-        // res.json({ user: dbUserData });
+            // declare session variables
+            req.session.user_id = dbUserData.id;
 
-        // Verify user
+            req.session.username = dbUserData.username;
+
+            req.session.loggedIn = true;
+
+
+            res.json({ user: dbUserData, message: 'You are now logged in!' });
+
+        });
+
 
     });
-})
+
+});
+
+router.post('/logout', (req, res) => {
+
+    if (req.session.loggedIn) {
+
+        req.session.destroy(() => {
+
+            res.status(204).end();
+            
+        });
+
+    }
+
+    else {
+
+        res.status(404).end();
+        
+    }
+
+});
 
 // PUT /api/users/1
 router.put('/:id', (req, res) => {
